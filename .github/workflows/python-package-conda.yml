@@ -7,7 +7,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
@@ -15,21 +14,22 @@ jobs:
       - name: Install deps
         run: pip install -r requirements.txt
 
-      - name: Start Flask (后台)
+      - name: Start Flask
         run: |
           nohup python -m flask run --host=0.0.0.0 --port=5000 > flask.log 2>&1 &
-          sleep 5                                    # 给 5 秒启动时间
+          sleep 5
         env:
-          FLASK_APP: app.py                         # 改成你的入口文件
+          FLASK_APP: app.py
           FLASK_ENV: development
 
-      - name: Smoke test @ :5000
+      - name: Smoke test
         run: |
           curl -f http://localhost:5000/ || (cat flask.log && exit 1)
 
+      # 仅升级这一行到 v4
       - name: Upload logs on failure
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: flask-log
           path: flask.log
