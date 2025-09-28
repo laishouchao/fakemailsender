@@ -1,0 +1,35 @@
+name: CI – start Flask
+
+on: [push]
+
+jobs:
+  flask-smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Start Flask (后台)
+        run: |
+          nohup python -m flask run --host=0.0.0.0 --port=5000 > flask.log 2>&1 &
+          sleep 5                                    # 给 5 秒启动时间
+        env:
+          FLASK_APP: app.py                         # 改成你的入口文件
+          FLASK_ENV: development
+
+      - name: Smoke test @ :5000
+        run: |
+          curl -f http://localhost:5000/ || (cat flask.log && exit 1)
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: flask-log
+          path: flask.log
